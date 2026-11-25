@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<link rel="stylesheet" href="css.css">
+<title>Asistencia E.E.S.T. N°5</title>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+</head>
+<body>
+  
+  <!-- ⏳ Splash / Carga -->
+  <div id="splash" style="position:fixed;inset:0;z-index:99999;background:linear-gradient(135deg,#0b2b5e,#0b5e9e,#3aa8e0);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;transition:opacity .5s">
+    <img src="LOGO.webp" alt="" style="width:80px;height:80px;border-radius:50%;object-fit:cover;box-shadow:0 4px 20px rgba(0,0,0,0.3)">
+    <div style="color:#fff;text-align:center">
+      <div style="font-size:20px;font-weight:800;letter-spacing:1px">E.E.S.T. N°5</div>
+      <div style="font-size:13px;opacity:.8;margin-top:4px">Sistema de Asistencia Digital</div>
+    </div>
+    <div style="margin-top:8px;display:flex;gap:6px">
+      <div style="width:10px;height:10px;border-radius:50%;background:#fff;animation:sp 1s ease-in-out infinite"></div>
+      <div style="width:10px;height:10px;border-radius:50%;background:#fff;animation:sp 1s ease-in-out infinite;animation-delay:.15s"></div>
+      <div style="width:10px;height:10px;border-radius:50%;background:#fff;animation:sp 1s ease-in-out infinite;animation-delay:.3s"></div>
+    </div>
+    <div style="color:rgba(255,255,255,0.6);font-size:12px;margin-top:4px" id="splashMsg">Iniciando...</div>
+  </div>
+  <style>@keyframes sp{0%,100%{opacity:.3;transform:scale(.8)}50%{opacity:1;transform:scale(1)}}</style>
+  
+<!-- 🏠 Auth -->
+<div class="page auth-page active" id="pageAuth">
+  <div class="auth-box login-box">
+    <div class="logo-area">
+      <img src="LOGO.webp" alt="E.E.S.T. N°5" style="width:64px;height:64px;border-radius:50%;object-fit:cover">
+    </div>
+    <h1>Asistencia</h1>
+    <div class="school-name">E.E.S.T. N°5</div>
+    <div id="authError" class="auth-error"></div>
+    <form id="authForm">
+      <div class="form-group" id="nameGroup" style="display:none">
+        <label>Nombre completo</label>
+        <input type="text" id="authName" placeholder="Ej: Messi" autocomplete="name">
+      </div>
+      <div class="form-group">
+        <label>Email</label>
+        <input type="email" id="authEmail" placeholder="ejemplo@correo.com" required autocomplete="email">
+      </div>
+      <div class="form-group">
+        <label>Contraseña</label>
+        <input type="password" id="authPassword" placeholder="Mínimo 6 caracteres" required minlength="6" autocomplete="current-password">
+      </div>
+      <button type="submit" class="btn btn-primary" id="authSubmit">Ingresar</button>
+    </form>
+    <div class="auth-switch">
+      <span id="authSwitchText">¿No tenés cuenta?</span>
+      <a id="authSwitchLink" onclick="toggleAuthMode()">Registrarse</a>
+    </div>
+  </div>
+</div>
+
+<!-- 📋 Dashboard -->
+<div class="page" id="pageDashboard">
+  <div class="topbar">
+    <div class="topbar-user" style="cursor:pointer" onclick="showProfile()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+      <div><span id="userNameDisplay">Usuario</span> <span class="topbar-role">Preceptor/a</span></div>
+    </div>
+    <button class="btn-logout" onclick="logout()">Cerrar sesión</button>
+  </div>
+  <div class="page-header">
+    <h2>Mis Cursos</h2>
+    <p id="dashboardGreeting">Seleccioná un curso para pasar lista</p>
+  </div>
+  <div class="course-grid" id="courseGrid"></div>
+  <div class="school-footer">E.E.S.T. N°5 — <strong>Sistema de Asistencia Digital</strong></div>
+</div>
+
+<!-- 📋 Curso -->
+<div class="page" id="pageCurso">
+  <div class="topbar">
+    <button class="btn-ghost" onclick="navigate('dashboard')">← Volver</button>
+    <div class="topbar-user" style="cursor:pointer" onclick="showProfile()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+      <span id="userNameDisplay2" style="font-size:13px;font-weight:600">Usuario</span>
+    </div>
+  </div>
+  <div id="cursoContent"></div>
+  <div class="school-footer">E.E.S.T. N°5 — <strong>Sistema de Asistencia Digital</strong></div>
+</div>
+
+<!-- 📖 Manual -->
+<div class="page" id="pageManual">
+  <div class="topbar">
+    <div class="topbar-user" style="cursor:pointer" onclick="showProfile()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+      <span id="userNameDisplay3" style="font-size:13px;font-weight:600">Usuario</span>
+    </div>
+  </div>
+  <div class="page-header"><h2>📖 Manual de uso</h2><p>Guía paso a paso del sistema</p></div>
+  <div class="manual-section" id="manualContent"></div>
+  <div class="school-footer">E.E.S.T. N°5 — <strong>Sistema de Asistencia Digital</strong></div>
+</div>
+
+<!-- 📊 Informe -->
+<div class="page" id="pageInforme">
+  <div class="topbar">
+    <div class="topbar-user" style="cursor:pointer" onclick="showProfile()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+      <span id="userNameDisplay4" style="font-size:13px;font-weight:600">Usuario</span>
+    </div>
+  </div>
+  <div class="page-header"><h2>📊 Informe de asistencias</h2><p>Planilla mensual de asistencia — todos los alumnos, día por día</p></div>
+  <div id="informeContent"></div>
+  <div class="school-footer">E.E.S.T. N°5 — <strong>Sistema de Asistencia Digital</strong></div>
+</div>
+
+<!-- ⚙️ Ajustes -->
+<div class="page" id="pageAjustes">
+  <div class="topbar">
+    <div class="topbar-user" style="cursor:pointer" onclick="showProfile()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+      <span id="userNameDisplay5" style="font-size:13px;font-weight:600">Usuario</span>
+    </div>
+  </div>
+  <div class="page-header"><h2>⚙️ Ajustes</h2><p>Personalizá tu experiencia</p></div>
+  <div id="ajustesContent"></div>
+  <div class="school-footer">E.E.S.T. N°5 — <strong>Sistema de Asistencia Digital</strong></div>
+</div>
+
+<!-- Bottom Navigation -->
+<div class="bottom-nav" id="bottomNav">
+  <a onclick="navigate('dashboard')" id="navDashboard">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" width="7" height="5"/><rect x="14" y="12" width="7" height="9"/><rect x="3" y="16" width="7" height="5"/></svg>
+    Dashboard
+  </a>
+  <a onclick="navigate('manual')" id="navManual">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"/></svg>
+    Manual
+  </a>
+  <a onclick="navigate('informe')" id="navInforme">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+    Informe
+  </a>
+  <a onclick="navigate('ajustes')" id="navAjustes">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+    Ajustes
+  </a>
+</div>
+
+<!-- Modal -->
+<div class="modal-overlay" id="modalOverlay"><div class="modal" id="modal"></div></div>
+<div class="toast-container" id="toastContainer"></div>
+
+</body>
+<script src="script.js"></script>
+</html>
